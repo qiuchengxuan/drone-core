@@ -75,28 +75,28 @@
 //!
 //! ## Field Token
 //!
-//! |                                           | Field Width | Field Mode | Register Mode |
-//! |-----------------------------------------------------|-----------|-------|------------|
-//! | [`into_unsync`](field::RegField::into_unsync)       |           |       |            |
-//! | [`into_sync`](field::RegField::into_sync)           |           |       |            |
-//! | [`into_copy`](field::RegField::into_copy)           |           |       |            |
-//! | [`as_sync`](field::RegField::as_sync)               |           |       |            |
-//! | [`load_val`](field::RRRegField::load_val)           |           | read  | read       |
-//! | [`default_val`](field::WoWoRegField::default_val)   |           | write | write-only |
-//! | [`store_val`](field::WoWoRegField::store_val)       |           | write | write-only |
-//! | [`store`](field::WoWoRegField::store)               |           | write | write-only |
-//! | [`read`](field::RRRegFieldBit::read)                | one-bit   | read  | read       |
-//! | [`read_bit`](field::RRRegFieldBit::read_bit)        | one-bit   | read  | read       |
-//! | [`set`](field::WWRegFieldBit::set)                  | one-bit   | write | write      |
-//! | [`clear`](field::WWRegFieldBit::clear)              | one-bit   | write | write      |
-//! | [`toggle`](field::WWRegFieldBit::toggle)            | one-bit   | write | write      |
-//! | [`set_bit`](field::WoWoRegFieldBit::set_bit)        | one-bit   | write | write-only |
-//! | [`clear_bit`](field::WoWoRegFieldBit::clear_bit)    | one-bit   | write | write-only |
-//! | [`toggle_bit`](field::WoWoRegFieldBit::toggle_bit)  | one-bit   | write | write-only |
-//! | [`read`](field::RRRegFieldBits::read)               | multi-bit | read  | read       |
-//! | [`read_bits`](field::RRRegFieldBits::read_bits)     | multi-bit | read  | read       |
-//! | [`write`](field::WWRegFieldBits::write)             | multi-bit | write | write      |
-//! | [`write_bits`](field::WoWoRegFieldBits::write_bits) | multi-bit | write | write-only |
+//! |                                                     | Field Width | Field Mode | Register Mode |
+//! |-----------------------------------------------------|-------------|------------|---------------|
+//! | [`into_unsync`](field::RegField::into_unsync)       |             |            |               |
+//! | [`into_sync`](field::RegField::into_sync)           |             |            |               |
+//! | [`into_copy`](field::RegField::into_copy)           |             |            |               |
+//! | [`as_sync`](field::RegField::as_sync)               |             |            |               |
+//! | [`load_val`](field::RRRegField::load_val)           |             | read       | read          |
+//! | [`default_val`](field::WoWoRegField::default_val)   |             | write      | write-only    |
+//! | [`store_val`](field::WoWoRegField::store_val)       |             | write      | write-only    |
+//! | [`store`](field::WoWoRegField::store)               |             | write      | write-only    |
+//! | [`read`](field::RRRegFieldBit::read)                | one-bit     | read       | read          |
+//! | [`read_bit`](field::RRRegFieldBit::read_bit)        | one-bit     | read       | read          |
+//! | [`set`](field::WWRegFieldBit::set)                  | one-bit     | write      | write         |
+//! | [`clear`](field::WWRegFieldBit::clear)              | one-bit     | write      | write         |
+//! | [`toggle`](field::WWRegFieldBit::toggle)            | one-bit     | write      | write         |
+//! | [`set_bit`](field::WoWoRegFieldBit::set_bit)        | one-bit     | write      | write-only    |
+//! | [`clear_bit`](field::WoWoRegFieldBit::clear_bit)    | one-bit     | write      | write-only    |
+//! | [`toggle_bit`](field::WoWoRegFieldBit::toggle_bit)  | one-bit     | write      | write-only    |
+//! | [`read`](field::RRRegFieldBits::read)               | multi-bit   | read       | read          |
+//! | [`read_bits`](field::RRRegFieldBits::read_bits)     | multi-bit   | read       | read          |
+//! | [`write`](field::WWRegFieldBits::write)             | multi-bit   | write      | write         |
+//! | [`write_bits`](field::WoWoRegFieldBits::write_bits) | multi-bit   | write      | write-only    |
 //!
 //! ## Register Token
 //!
