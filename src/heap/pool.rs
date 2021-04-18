@@ -1,8 +1,15 @@
 use core::{
     alloc::Layout,
     ptr::{self, NonNull},
-    sync::atomic::{AtomicPtr, Ordering},
+    sync::atomic::{AtomicPtr, AtomicUsize, Ordering},
 };
+
+#[derive(Copy, Clone, Default)]
+pub struct Statistics {
+    pub block_size: usize,
+    pub capacity: usize,
+    pub remain: usize,
+}
 
 /// The set of free memory blocks.
 ///
@@ -10,8 +17,12 @@ use core::{
 /// list, using the first word of each unallocated region as a pointer to the
 /// next.
 pub struct Pool {
+    /// Total blocks
+    capacity: usize,
+    /// Remain blocks
+    remain: AtomicUsize,
     /// Block size. Doesn't change in the run-time.
-    size: usize,
+    block_size: usize,
     /// Address of the byte past the last element. Doesn't change in the
     /// run-time.
     edge: *mut u8,
@@ -25,19 +36,36 @@ unsafe impl Sync for Pool {}
 
 impl Pool {
     /// Creates a new `Pool`.
-    pub const fn new(address: usize, size: usize, capacity: usize) -> Self {
+    pub const fn new(address: usize, block_size: usize, capacity: usize) -> Self {
         Self {
-            size,
-            edge: (address + size * capacity) as *mut u8,
+            capacity,
+            remain: AtomicUsize::new(capacity),
+            block_size,
+            edge: (address + block_size * capacity) as *mut u8,
             free: AtomicPtr::new(ptr::null_mut()),
             uninit: AtomicPtr::new(address as *mut u8),
         }
     }
 
+    /// Returns capacity
+    #[inline]
+    pub fn capacity(&self) -> usize {
+        self.capacity
+    }
+
     /// Returns the block size.
     #[inline]
-    pub fn size(&self) -> usize {
-        self.size
+    pub fn block_size(&self) -> usize {
+        self.block_size
+    }
+
+    /// Returns pool allocation statistics.
+    pub fn statistics(&self) -> Statistics {
+        Statistics {
+            block_size: self.block_size,
+            capacity: self.capacity,
+            remain: self.remain.load(Ordering::Relaxed),
+        }
     }
 
     /// Allocates one block of memory.
@@ -71,6 +99,7 @@ impl Pool {
                 .compare_exchange_weak(curr, next, Ordering::AcqRel, Ordering::Acquire)
                 .is_ok()
             {
+                self.remain.fetch_add(1, Ordering::Relaxed);
                 break;
             }
         }
@@ -89,6 +118,7 @@ impl Pool {
                 .compare_exchange_weak(curr, next, Ordering::AcqRel, Ordering::Acquire)
                 .is_ok()
             {
+                self.remain.fetch_sub(1, Ordering::Relaxed);
                 break Some(unsafe { NonNull::new_unchecked(curr) });
             }
         }
@@ -100,12 +130,13 @@ impl Pool {
             if curr == self.edge {
                 break None;
             }
-            let next = unsafe { curr.add(self.size) };
+            let next = unsafe { curr.add(self.block_size) };
             if self
                 .uninit
                 .compare_exchange_weak(curr, next, Ordering::Relaxed, Ordering::Relaxed)
                 .is_ok()
             {
+                self.remain.fetch_sub(1, Ordering::Relaxed);
                 break Some(unsafe { NonNull::new_unchecked(curr) });
             }
         }
@@ -119,7 +150,7 @@ pub trait Fits: Copy {
 impl<'a> Fits for &'a Layout {
     #[inline]
     fn fits(self, pool: &Pool) -> bool {
-        self.size() <= pool.size
+        self.size() <= pool.block_size
     }
 }
 

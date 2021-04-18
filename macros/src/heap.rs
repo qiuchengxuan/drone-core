@@ -160,8 +160,7 @@ fn def_drone_allocator(
         quote!(::core::option::Option::None)
     };
     quote! {
-        impl ::drone_core::heap::Allocator for #metadata_ident {
-            const POOL_COUNT: usize = #pools_len;
+        impl ::drone_core::heap::Allocator<#pools_len> for #metadata_ident {
             const TRACE_PORT: ::core::option::Option<u8> = #trace_port;
 
             #[inline]

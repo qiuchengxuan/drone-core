@@ -1,4 +1,4 @@
-use super::pool::{Fits, Pool};
+use super::pool::{Fits, Pool, Statistics};
 use core::{
     alloc::{AllocError, Layout},
     ptr,
@@ -12,10 +12,7 @@ use core::{
 /// [`heap`](crate::heap) macro should be used to generate the concrete type and
 /// the implementation.
 #[allow(clippy::trivially_copy_pass_by_ref)]
-pub trait Allocator: Sized {
-    /// The total number of memory pools.
-    const POOL_COUNT: usize;
-
+pub trait Allocator<const N: usize>: Sized {
     /// Logger port for heap tracing. Disabled if `None`.
     const TRACE_PORT: Option<u8>;
 
@@ -28,12 +25,23 @@ pub trait Allocator: Sized {
     unsafe fn get_pool_unchecked<I>(&self, index: I) -> &I::Output
     where
         I: SliceIndex<[Pool]>;
+
+    /// Returns allocation statistics in form of
+    /// [(`block_size`, capacity, remain); `pool_size`]
+    fn get_statistics(&self) -> [Statistics; N] {
+        let mut statistics = [Statistics::default(); N];
+        for i in 0..N {
+            let pool = unsafe { self.get_pool_unchecked(i) };
+            statistics[i] = pool.statistics();
+        }
+        statistics
+    }
 }
 
 /// Does a binary search for the pool with the smallest block size to fit
 /// `value`.
-pub fn binary_search<A: Allocator, T: Fits>(heap: &A, value: T) -> usize {
-    let (mut left, mut right) = (0, A::POOL_COUNT);
+pub fn binary_search<A: Allocator<N>, T: Fits, const N: usize>(heap: &A, value: T) -> usize {
+    let (mut left, mut right) = (0, N);
     while right > left {
         let middle = left + ((right - left) >> 1);
         let pool = unsafe { heap.get_pool_unchecked(middle) };
@@ -47,24 +55,27 @@ pub fn binary_search<A: Allocator, T: Fits>(heap: &A, value: T) -> usize {
 }
 
 #[doc(hidden)]
-pub fn allocate<A: Allocator>(heap: &A, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
+pub fn allocate<A: Allocator<N>, const N: usize>(
+    heap: &A,
+    layout: Layout,
+) -> Result<NonNull<[u8]>, AllocError> {
     if let Some(trace_port) = A::TRACE_PORT {
         trace::allocate(trace_port, layout);
     }
     if layout.size() == 0 {
         return Ok(NonNull::slice_from_raw_parts(layout.dangling(), 0));
     }
-    for pool_idx in binary_search(heap, &layout)..A::POOL_COUNT {
+    for pool_idx in binary_search(heap, &layout)..N {
         let pool = unsafe { heap.get_pool_unchecked(pool_idx) };
         if let Some(ptr) = pool.allocate() {
-            return Ok(NonNull::slice_from_raw_parts(ptr, pool.size()));
+            return Ok(NonNull::slice_from_raw_parts(ptr, pool.block_size()));
         }
     }
     Err(AllocError)
 }
 
 #[doc(hidden)]
-pub fn allocate_zeroed<A: Allocator>(
+pub fn allocate_zeroed<A: Allocator<N>, const N: usize>(
     heap: &A,
     layout: Layout,
 ) -> Result<NonNull<[u8]>, AllocError> {
@@ -74,7 +85,11 @@ pub fn allocate_zeroed<A: Allocator>(
 }
 
 #[doc(hidden)]
-pub unsafe fn deallocate<A: Allocator>(heap: &A, ptr: NonNull<u8>, layout: Layout) {
+pub unsafe fn deallocate<A: Allocator<N>, const N: usize>(
+    heap: &A,
+    ptr: NonNull<u8>,
+    layout: Layout,
+) {
     if let Some(trace_port) = A::TRACE_PORT {
         trace::deallocate(trace_port, layout);
     }
@@ -88,7 +103,7 @@ pub unsafe fn deallocate<A: Allocator>(heap: &A, ptr: NonNull<u8>, layout: Layou
 }
 
 #[doc(hidden)]
-pub unsafe fn grow<A: Allocator>(
+pub unsafe fn grow<A: Allocator<N>, const N: usize>(
     heap: &A,
     ptr: NonNull<u8>,
     old_layout: Layout,
@@ -106,7 +121,7 @@ pub unsafe fn grow<A: Allocator>(
 }
 
 #[doc(hidden)]
-pub unsafe fn grow_zeroed<A: Allocator>(
+pub unsafe fn grow_zeroed<A: Allocator<N>, const N: usize>(
     heap: &A,
     ptr: NonNull<u8>,
     old_layout: Layout,
@@ -124,7 +139,7 @@ pub unsafe fn grow_zeroed<A: Allocator>(
 }
 
 #[doc(hidden)]
-pub unsafe fn shrink<A: Allocator>(
+pub unsafe fn shrink<A: Allocator<N>, const N: usize>(
     heap: &A,
     ptr: NonNull<u8>,
     old_layout: Layout,
@@ -218,8 +233,9 @@ mod tests {
         pools: [Pool; 10],
     }
 
-    impl Allocator for TestHeap {
-        const POOL_COUNT: usize = 10;
+    const POOL_COUNT: usize = 10;
+
+    impl Allocator<POOL_COUNT> for TestHeap {
         const TRACE_PORT: Option<u8> = None;
 
         unsafe fn get_pool_unchecked<I>(&self, index: I) -> &I::Output
@@ -234,16 +250,16 @@ mod tests {
     fn test_binary_search() {
         fn search_layout(heap: &TestHeap, size: usize) -> Option<usize> {
             let pool_idx = binary_search(heap, &Layout::from_size_align(size, 4).unwrap());
-            if pool_idx < TestHeap::POOL_COUNT {
-                unsafe { Some(heap.get_pool_unchecked(pool_idx).size()) }
+            if pool_idx < POOL_COUNT {
+                unsafe { Some(heap.get_pool_unchecked(pool_idx).block_size()) }
             } else {
                 None
             }
         }
         fn search_ptr(heap: &TestHeap, ptr: usize) -> Option<usize> {
             let pool_idx = binary_search(heap, unsafe { NonNull::new_unchecked(ptr as *mut u8) });
-            if pool_idx < TestHeap::POOL_COUNT {
-                unsafe { Some(heap.get_pool_unchecked(pool_idx).size()) }
+            if pool_idx < POOL_COUNT {
+                unsafe { Some(heap.get_pool_unchecked(pool_idx).block_size()) }
             } else {
                 None
             }
