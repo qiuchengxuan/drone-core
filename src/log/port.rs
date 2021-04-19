@@ -44,7 +44,7 @@ impl Port {
         #[cfg(feature = "std")]
         return self;
         let Self(port) = self;
-        unsafe { drone_log_write_bytes(port, bytes.as_ptr(), bytes.len()) };
+        unsafe { drone_log_write_bytes(port, bytes) };
         self
     }
 
