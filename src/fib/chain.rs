@@ -13,7 +13,7 @@ pub struct Chain {
 pub struct Node<F> {
     advance: unsafe fn(*mut ListNode<Node<()>>) -> bool,
     deallocate: unsafe fn(*mut ListNode<Node<()>>),
-    fib: F,
+    fib: *mut F,
 }
 
 /// An iterator produced by [`Chain::drain`].
@@ -103,17 +103,22 @@ impl Node<()> {
 }
 
 impl<F: RootFiber> Node<F> {
-    fn allocate(fib: F) -> *mut ListNode<Node<()>> {
+    fn allocate(fiber: F) -> *mut ListNode<Node<()>> {
+        let fib = Box::into_raw(Box::new(fiber));
         let node = Node { advance: Self::advance, deallocate: Self::deallocate, fib };
         unsafe { Self::upcast(Box::into_raw(Box::new(ListNode::from(node)))) }
     }
 
     unsafe fn advance(node: *mut ListNode<Node<()>>) -> bool {
-        unsafe { Pin::new_unchecked(&mut (*Self::downcast(node)).fib).advance() }
+        unsafe { Pin::new_unchecked(&mut *(*Self::downcast(node)).fib).advance() }
     }
 
     unsafe fn deallocate(node: *mut ListNode<Node<()>>) {
-        unsafe { Box::from_raw(Self::downcast(node)) };
+        unsafe {
+            let object = Self::downcast(node);
+            Box::from_raw((&*object).fib);
+            Box::from_raw(object);
+        }
     }
 
     unsafe fn upcast(node: *mut ListNode<Self>) -> *mut ListNode<Node<()>> {
