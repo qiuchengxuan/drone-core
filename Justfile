@@ -20,8 +20,7 @@ doc-open: doc
 
 # Run the tests
 test:
-	cargo test --all --exclude drone-core
-	cargo test --features std --package drone-core
+	cargo test --all
 
 # Update README.md
 readme:

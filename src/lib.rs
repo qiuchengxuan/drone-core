@@ -22,24 +22,17 @@
 //! ```
 
 #![feature(alloc_layout_extra)]
-#![feature(alloc_prelude)]
 #![feature(allocator_api)]
-#![feature(const_fn)]
-#![feature(const_raw_ptr_deref)]
 #![feature(core_intrinsics)]
 #![feature(exhaustive_patterns)]
 #![feature(generator_trait)]
 #![feature(generators)]
 #![feature(lang_items)]
 #![feature(marker_trait_attr)]
-#![feature(maybe_uninit_extra)]
-#![feature(maybe_uninit_ref)]
 #![feature(negative_impls)]
 #![feature(never_type)]
 #![feature(never_type_fallback)]
 #![feature(nonnull_slice_from_raw_parts)]
-#![feature(prelude_import)]
-#![feature(raw_vec_internals)]
 #![feature(slice_internals)]
 #![feature(slice_ptr_get)]
 #![feature(slice_ptr_len)]
@@ -60,27 +53,26 @@
     clippy::use_self,
     clippy::used_underscore_binding
 )]
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
 
 pub mod bitfield;
-pub mod ffi;
 pub mod fib;
 pub mod heap;
 pub mod inventory;
 pub mod io;
+#[cfg(feature = "log")]
 pub mod log;
 pub mod mem;
 pub mod periph;
-pub mod prelude;
 pub mod proc_loop;
 pub mod reg;
 pub mod sync;
 pub mod thr;
 pub mod token;
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "lang-items")]
 mod lang_items;
 
 /// Defines dynamic memory structures.
@@ -103,7 +95,3 @@ pub use drone_core_macros::reg;
 
 #[doc(hidden)]
 pub use drone_core_macros::config_override;
-
-#[prelude_import]
-#[allow(unused_imports)]
-use crate::prelude::*;

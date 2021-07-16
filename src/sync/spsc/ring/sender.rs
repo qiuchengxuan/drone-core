@@ -147,18 +147,14 @@ impl<T, E> Inner<T, E> {
                 Err(Some((*state, index)))
             }
         }) {
-            Ok((state, index)) => {
-                unsafe { ptr::drop_in_place(self.buffer.ptr().add(index)) };
-                self.put(value, state, index)
-            }
+            Ok((state, index)) => self.put(value, state, index),
             Err(Some((state, index))) => self.put(value, state, index),
             Err(None) => Err(value),
         }
     }
 
     fn put(&self, value: T, state: usize, index: usize) -> Result<(), T> {
-        let buffer_ptr = unsafe { self.buffer.ptr().add(index) };
-        unsafe { ptr::write(buffer_ptr, value) };
+        unsafe { ptr::write(ptr::addr_of!(self.buffer[index]) as *mut T, value) };
         self.transaction(state, Ordering::AcqRel, Ordering::Acquire, |state| {
             if *state & COMPLETE == 0 {
                 *state = state.wrapping_add(1);
@@ -172,7 +168,7 @@ impl<T, E> Inner<T, E> {
                 unsafe { (*self.rx_waker.get()).assume_init_ref().wake_by_ref() };
             }
         })
-        .map_err(|()| unsafe { ptr::read(buffer_ptr) })
+        .map_err(|()| unsafe { ptr::read(ptr::addr_of!(self.buffer[index])) })
     }
 
     fn put_index_try(&self, state: usize) -> Option<usize> {

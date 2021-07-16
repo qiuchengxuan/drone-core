@@ -1,5 +1,6 @@
 //! A lock-free singly-linked list.
 
+use alloc::boxed::Box;
 use core::{
     iter::{FromIterator, FusedIterator},
     marker::PhantomData,
@@ -517,7 +518,7 @@ impl<T> DerefMut for Node<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::LinkedList;
 
     #[test]
     fn drain_filter_test() {

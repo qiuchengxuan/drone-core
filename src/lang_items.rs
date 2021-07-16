@@ -1,5 +1,6 @@
-use crate::{eprintln, log};
 use core::{alloc::Layout, panic::PanicInfo};
+
+use crate::{log, log::eprintln};
 
 extern "C" {
     fn drone_self_reset() -> !;

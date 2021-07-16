@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use core::{future::Future, pin::Pin};
 
 /// The `Seek` trait provides a cursor which can be moved within a stream of

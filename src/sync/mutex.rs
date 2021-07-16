@@ -1,4 +1,4 @@
-use crate::sync::linked_list::{LinkedList, Node};
+use alloc::boxed::Box;
 use core::{
     cell::UnsafeCell,
     fmt,
@@ -9,6 +9,8 @@ use core::{
     sync::atomic::{AtomicU8, Ordering},
     task::{Context, Poll, Waker},
 };
+
+use crate::sync::linked_list::{LinkedList, Node};
 
 /// A mutual exclusion primitive useful for protecting shared data.
 ///

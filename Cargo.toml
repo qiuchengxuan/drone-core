@@ -35,7 +35,9 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = []
-std = ["futures/std"]
+lang-items = ["log"]
+log = []
+trace = ["log"]
 
 [dependencies.drone-ctypes]
 version = "=0.14.2"
@@ -46,5 +48,5 @@ version = "=0.14.2"
 path = "macros"
 
 [dependencies]
-futures = { version = "0.3.0", default-features = false, features = ["alloc", "async-await"] }
+futures = { version = "0.3", default-features = false, features = ["alloc", "async-await"] }
 typenum = "1.12"

@@ -59,6 +59,7 @@ pub fn allocate<A: Allocator<N>, const N: usize>(
     heap: &A,
     layout: Layout,
 ) -> Result<NonNull<[u8]>, AllocError> {
+    #[cfg(feature = "trace")]
     if let Some(trace_port) = A::TRACE_PORT {
         trace::allocate(trace_port, layout);
     }
@@ -90,6 +91,7 @@ pub unsafe fn deallocate<A: Allocator<N>, const N: usize>(
     ptr: NonNull<u8>,
     layout: Layout,
 ) {
+    #[cfg(feature = "trace")]
     if let Some(trace_port) = A::TRACE_PORT {
         trace::deallocate(trace_port, layout);
     }
@@ -109,6 +111,7 @@ pub unsafe fn grow<A: Allocator<N>, const N: usize>(
     old_layout: Layout,
     new_layout: Layout,
 ) -> Result<NonNull<[u8]>, AllocError> {
+    #[cfg(feature = "trace")]
     if let Some(trace_port) = A::TRACE_PORT {
         trace::grow(trace_port, old_layout, new_layout);
     }
@@ -127,6 +130,7 @@ pub unsafe fn grow_zeroed<A: Allocator<N>, const N: usize>(
     old_layout: Layout,
     new_layout: Layout,
 ) -> Result<NonNull<[u8]>, AllocError> {
+    #[cfg(feature = "trace")]
     if let Some(trace_port) = A::TRACE_PORT {
         trace::grow(trace_port, old_layout, new_layout);
     }
@@ -145,6 +149,7 @@ pub unsafe fn shrink<A: Allocator<N>, const N: usize>(
     old_layout: Layout,
     new_layout: Layout,
 ) -> Result<NonNull<[u8]>, AllocError> {
+    #[cfg(feature = "trace")]
     if let Some(trace_port) = A::TRACE_PORT {
         trace::shrink(trace_port, old_layout, new_layout);
     }
@@ -156,6 +161,7 @@ pub unsafe fn shrink<A: Allocator<N>, const N: usize>(
     }
 }
 
+#[cfg(feature = "trace")]
 mod trace {
     use crate::{heap::HEAPTRACE_KEY, log::Port};
     use core::alloc::Layout;

@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use core::{future::Future, pin::Pin};
 
 /// The `Read` trait allows for reading bytes from a source asynchronously.

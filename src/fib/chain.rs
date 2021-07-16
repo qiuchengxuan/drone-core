@@ -1,8 +1,10 @@
+use alloc::boxed::Box;
+use core::{iter::FusedIterator, pin::Pin};
+
 use crate::{
     fib::RootFiber,
     sync::linked_list::{DrainFilterRaw, LinkedList, Node as ListNode},
 };
-use core::{iter::FusedIterator, pin::Pin};
 
 /// A lock-free list of fibers.
 pub struct Chain {

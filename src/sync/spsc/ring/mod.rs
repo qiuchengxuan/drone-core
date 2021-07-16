@@ -12,12 +12,10 @@ pub use self::{
 };
 
 use crate::sync::spsc::{SpscInner, SpscInnerErr};
-use alloc::{raw_vec::RawVec, sync::Arc};
+use alloc::{sync::Arc, vec::Vec};
 use core::{
     cell::UnsafeCell,
-    cmp,
     mem::{size_of, MaybeUninit},
-    ptr, slice,
     sync::atomic::{AtomicUsize, Ordering},
     task::Waker,
 };
@@ -42,7 +40,7 @@ const OPTION_BITS: u32 = 4;
 // Length range: [0; MAX_CAPACITY]
 struct Inner<T, E> {
     state: AtomicUsize,
-    buffer: RawVec<T>,
+    buffer: Vec<T>,
     err: UnsafeCell<Option<E>>,
     rx_waker: UnsafeCell<MaybeUninit<Waker>>,
     tx_waker: UnsafeCell<MaybeUninit<Waker>>,
@@ -70,42 +68,13 @@ impl<T, E> Inner<T, E> {
     #[inline]
     fn new(capacity: usize) -> Self {
         assert!(capacity <= MAX_CAPACITY);
+        let (ptr, _, _, alloc) = Vec::with_capacity(capacity).into_raw_parts_with_alloc();
         Self {
             state: AtomicUsize::new(0),
-            buffer: RawVec::with_capacity(capacity),
+            buffer: unsafe { Vec::from_raw_parts_in(ptr, capacity, capacity, alloc) },
             err: UnsafeCell::new(None),
             rx_waker: UnsafeCell::new(MaybeUninit::zeroed()),
             tx_waker: UnsafeCell::new(MaybeUninit::zeroed()),
-        }
-    }
-}
-
-impl<T, E> Drop for Inner<T, E> {
-    fn drop(&mut self) {
-        let state = self.state_load(Ordering::Acquire);
-        let length = state & NUMBER_MASK;
-        let cursor = state >> NUMBER_BITS & NUMBER_MASK;
-        let end = cursor.wrapping_add(length).wrapping_rem(self.buffer.capacity());
-        match cursor.cmp(&end) {
-            cmp::Ordering::Equal => unsafe {
-                ptr::drop_in_place(slice::from_raw_parts_mut(
-                    self.buffer.ptr(),
-                    self.buffer.capacity(),
-                ));
-            },
-            cmp::Ordering::Less => unsafe {
-                ptr::drop_in_place(slice::from_raw_parts_mut(
-                    self.buffer.ptr().add(cursor),
-                    end - cursor,
-                ));
-            },
-            cmp::Ordering::Greater => unsafe {
-                ptr::drop_in_place(slice::from_raw_parts_mut(self.buffer.ptr(), end));
-                ptr::drop_in_place(slice::from_raw_parts_mut(
-                    self.buffer.ptr().add(cursor),
-                    self.buffer.capacity() - cursor,
-                ));
-            },
         }
     }
 }

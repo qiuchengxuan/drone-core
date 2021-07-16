@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use core::{future::Future, pin::Pin};
 
 /// The `Write` trait allows for writing bytes to a source asynchronously.

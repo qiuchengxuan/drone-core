@@ -10,8 +10,6 @@
 //! * `1` - standard error
 //! * `31` - heap trace
 
-#![cfg_attr(feature = "std", allow(unreachable_code, unused_variables))]
-
 mod macros;
 mod port;
 
@@ -122,7 +120,5 @@ pub fn write_fmt(port: u8, args: fmt::Arguments<'_>) {
 /// This function is a no-op if no debug probe is connected and listening.
 #[inline]
 pub fn flush() {
-    #[cfg(feature = "std")]
-    return;
     unsafe { drone_log_flush() };
 }

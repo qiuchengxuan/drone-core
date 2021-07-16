@@ -28,8 +28,6 @@ impl Port {
     /// `port` stream.
     #[inline]
     pub fn is_enabled(self) -> bool {
-        #[cfg(feature = "std")]
-        return false;
         let Self(port) = self;
         unsafe { drone_log_is_enabled(port) }
     }
@@ -41,8 +39,6 @@ impl Port {
     /// atomic byte sequences.
     #[inline]
     pub fn write_bytes(self, bytes: &[u8]) -> Self {
-        #[cfg(feature = "std")]
-        return self;
         let Self(port) = self;
         unsafe { drone_log_write_bytes(port, bytes) };
         self
@@ -71,24 +67,18 @@ impl Write for Port {
 
 impl PortWrite for u8 {
     fn port_write(port: u8, value: Self) {
-        #[cfg(feature = "std")]
-        return;
         unsafe { drone_log_write_u8(port, value) };
     }
 }
 
 impl PortWrite for u16 {
     fn port_write(port: u8, value: Self) {
-        #[cfg(feature = "std")]
-        return;
         unsafe { drone_log_write_u16(port, value) };
     }
 }
 
 impl PortWrite for u32 {
     fn port_write(port: u8, value: Self) {
-        #[cfg(feature = "std")]
-        return;
         unsafe { drone_log_write_u32(port, value) };
     }
 }
