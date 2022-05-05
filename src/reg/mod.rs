@@ -299,6 +299,12 @@ pub mod marker;
 pub mod prelude;
 pub mod tag;
 
+use core::{
+    mem::transmute,
+    ptr::{read_volatile, write_volatile},
+    sync::atomic::Ordering,
+};
+
 /// A macro to define a macro to define a set of register tokens.
 ///
 /// See [the module level documentation](self) for details.
@@ -314,7 +320,6 @@ pub use drone_core_macros::reg_tokens_inner as tokens_inner;
 
 use self::tag::{Crt, RegAtomic, RegOwned, RegTag, Srt, Urt};
 use crate::{bitfield::Bitfield, token::Token};
-use core::ptr::{read_volatile, write_volatile};
 
 /// The base trait for a memory-mapped register token.
 pub trait Reg<T: RegTag>: Token + Sync {
@@ -562,6 +567,16 @@ pub trait WRegAtomic<'a, T: RegAtomic>: WReg<T> + RegRef<'a, T> {
     /// [`store_val`](WRegAtomic::store_val).
     fn store_bits(&self, bits: <Self::Val as Bitfield>::Bits);
 
+    /// Compare exchange raw `bits` into the register memory.
+    ///
+    /// See also [`store`](WRegAtomic::store),
+    /// [`store_val`](WRegAtomic::store_val).
+    fn compare_exchange(
+        &self,
+        current: <Self::Val as Bitfield>::Bits,
+        new: <Self::Val as Bitfield>::Bits,
+    ) -> Result<<Self::Val as Bitfield>::Bits, <Self::Val as Bitfield>::Bits>;
+
     /// Writes the reset value into the register memory.
     fn reset(&'a self);
 }
@@ -673,6 +688,18 @@ where
     #[inline]
     fn store_bits(&self, bits: <Self::Val as Bitfield>::Bits) {
         unsafe { write_volatile(self.as_mut_ptr(), bits) };
+    }
+
+    #[inline]
+    fn compare_exchange(
+        &self,
+        current: <Self::Val as Bitfield>::Bits,
+        new: <Self::Val as Bitfield>::Bits,
+    ) -> Result<<Self::Val as Bitfield>::Bits, <Self::Val as Bitfield>::Bits> {
+        let atomic: &atomic::Atomic<<Self::Val as Bitfield>::Bits> =
+            unsafe { transmute(self.as_mut_ptr()) };
+        let relaxed = Ordering::Relaxed;
+        atomic.compare_exchange(current, new, relaxed, relaxed)
     }
 
     #[inline]

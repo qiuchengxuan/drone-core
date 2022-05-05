@@ -48,5 +48,6 @@ version = "=0.14.2"
 path = "macros"
 
 [dependencies]
+atomic = "0.5"
 futures = { version = "0.3", default-features = false, features = ["alloc", "async-await"] }
 typenum = "1.12"
