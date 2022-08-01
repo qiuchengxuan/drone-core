@@ -32,11 +32,9 @@
 #![feature(negative_impls)]
 #![feature(never_type)]
 #![feature(never_type_fallback)]
-#![feature(nonnull_slice_from_raw_parts)]
 #![feature(slice_internals)]
 #![feature(slice_ptr_get)]
 #![feature(slice_ptr_len)]
-#![feature(untagged_unions)]
 #![warn(missing_docs, unsafe_op_in_unsafe_fn)]
 #![warn(clippy::pedantic)]
 #![allow(

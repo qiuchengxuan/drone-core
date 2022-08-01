@@ -118,8 +118,8 @@ impl<F: RootFiber> Node<F> {
     unsafe fn deallocate(node: *mut ListNode<Node<()>>) {
         unsafe {
             let object = Self::downcast(node);
-            Box::from_raw((&*object).fib);
-            Box::from_raw(object);
+            drop(Box::from_raw((&*object).fib));
+            drop(Box::from_raw(object));
         }
     }
 
